@@ -13,5 +13,5 @@ class TaskProtocol(Protocol):
 
 @runtime_checkable
 class TaskSourceProtocol(Protocol):
-    '''Протокол истоника задач'''
+    '''Протокол источника задач'''
     def get_tasks(self) -> Iterable[TaskProtocol]: ...

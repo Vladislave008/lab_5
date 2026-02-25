@@ -77,8 +77,7 @@ class TestProtocols:
 
 class TestTaskContract:
     '''Проверка соблюдения контракта для задач'''
-    def test_valid_tasks_pass_contract(self, valid_task_class, valid_task_dataclass, 
-                                       valid_task_namedtuple, task_module):
+    def test_valid_tasks_pass_contract(self, valid_task_class, valid_task_dataclass, valid_task_namedtuple, task_module):
         assert task_module._check_task_contract(valid_task_class) is True
         assert task_module._check_task_contract(valid_task_dataclass) is True
         assert task_module._check_task_contract(valid_task_namedtuple) is True

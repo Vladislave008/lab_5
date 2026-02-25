@@ -16,7 +16,7 @@ class TaskModule():
             #filemode='a'
         )
 
-    def add_task(self, task: Any):
+    def add_task(self, task: TaskProtocol | dict) -> None:
         '''Добавление задачи в модуль (с проверкой контракта)'''
         if self._check_task_contract(task):
             self.tasks.append(task)
@@ -24,7 +24,7 @@ class TaskModule():
         else:
             self.logger.info(f"{COLORS.RED}Task {task} can't be added to module{COLORS.RESET}")
 
-    def add_source(self, source: Any):
+    def add_source(self, source: TaskSourceProtocol) -> None:
         '''Добавление источника в модуль (с проверкой контракта)'''
         if self._check_task_source_contract(source):
             self.sources.append(source)
@@ -32,7 +32,7 @@ class TaskModule():
         else:
             self.logger.info(f"{COLORS.RED}Source {source} can't be added to module{COLORS.RESET}")
 
-    def get_tasks_from_sources(self):
+    def get_tasks_from_sources(self) -> None:
         '''Добавление задач из всех источников в модуль'''
         for source in self.sources:
             for task in source.get_tasks():
