@@ -13,7 +13,7 @@ class FileSource:
         ]
 
 class BadFileSource:
-    '''Заглушка для имитации чтения задач из файла'''
+    '''Плохая заглушка для имитации чтения задач из файла'''
     def __init__(self, file_path: str):
         self.file_path = file_path
 

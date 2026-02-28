@@ -9,7 +9,7 @@ class TaskModule():
         self.sources = list()
         self.logger = logging.getLogger(__name__)
         logging.basicConfig(
-            level=logging.INFO, 
+            level=logging.INFO,
             format='[%(asctime)s] %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S',
             #filename='logger.log',
@@ -49,7 +49,7 @@ class TaskModule():
                 return True
             else:
                 id_type = None
-                if 'id' in obj: 
+                if 'id' in obj:
                     id_type = type(obj['id'])
                 self.logger.info(f'{COLORS.GRAY}Object {obj} does not meet task contract\n\t\t\t    has id: {'id' in obj}\n\t\t\t    id type (must be int/str): {id_type}\n\t\t\t    has payload: {'payload' in obj}{COLORS.RESET}')
                 return False
@@ -57,7 +57,7 @@ class TaskModule():
             has_id = hasattr(obj, 'id')
             has_payload = hasattr(obj, 'payload')
             id_type = None
-            if has_id: 
+            if has_id:
                 id_type = type(getattr(obj, 'id'))
             self.logger.info(f'{COLORS.GRAY}Object {obj} does not meet task contract\n\t\t\t    has id: {has_id}\n\t\t\t    id type (must be int/str): {id_type}\n\t\t\t    has payload: {has_payload}{COLORS.RESET}')
             return False
@@ -71,4 +71,3 @@ class TaskModule():
             has_getter = hasattr(obj, 'get_tasks')
             self.logger.info(f'{COLORS.GRAY}Object {obj} does not meet task contract\n\t\t\t    has get_tasks() func: {has_getter}{COLORS.RESET}')
             return False
-    

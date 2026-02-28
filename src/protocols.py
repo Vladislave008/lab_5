@@ -6,7 +6,7 @@ class TaskProtocol(Protocol):
     '''Протокол контракта задач'''
     @property
     def id(self) -> int | str: ...
-    
+
     @property
     def payload(self) -> Any: ...
 

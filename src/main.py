@@ -6,8 +6,8 @@ if __name__ == '__main__':
     task1 = TaskDataclass(id=1, payload={'data': 'test'})
     task2 = TaskNamedTuple(id='2', payload=[1, 2, 3])
     task3 = TaskClass(id=[3], payload='simple')
-    task4 = {'id': 1, 'payload': [42]} 
-    
+    task4 = {'id': 1, 'payload': [42]}
+
     file_source = FileSource('tasks.json')
     bad_file_source = BadFileSource('project_122.flp')
     api_source = ApiSource('https://api.example.com/view/tasks')
