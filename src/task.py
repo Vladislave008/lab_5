@@ -231,6 +231,9 @@ class Task:
         """Удаление объекта задачи (системное)"""
         Task._all_ids.discard(getattr(self, "_id", None))
 
+    def __repr__(self):
+        return f"Task '{self._id}'"
+
     def delete(self):
         """Удаление объекта задачи"""
         Task._all_ids.discard(getattr(self, "_id", None))

@@ -23,3 +23,6 @@ ALLOWED_TASK_ATTRIBUTES = [
     "planned_time", "description", "duration",
     "started_at", "finished_at", "is_valid"
 ]
+FILTER_TASK_ATTRIBUTES = [
+    "is_ready","priority", "status", "is_valid"
+]
