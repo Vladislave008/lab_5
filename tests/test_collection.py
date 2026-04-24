@@ -1,7 +1,7 @@
 import pytest
 from datetime import timedelta
 from src.task import Task
-from src.task_collections import TaskQueue, TaskQueueException, TaskIterator, TaskReverseIterator
+from src.task_collections import AsyncTaskQueue, TaskQueueException, TaskIterator, TaskReverseIterator
 
 @pytest.fixture(autouse=True)
 def cleanup_task_ids():
@@ -33,12 +33,12 @@ def sample_tasks():
 @pytest.fixture
 def empty_queue():
     """Создает пустую очередь"""
-    return TaskQueue()
+    return AsyncTaskQueue()
 
 @pytest.fixture
 def queue_with_tasks(sample_tasks):
     """Создает очередь с задачами"""
-    return TaskQueue(sample_tasks)
+    return AsyncTaskQueue(sample_tasks)
 
 @pytest.fixture
 def queue_with_three_tasks():
@@ -48,11 +48,11 @@ def queue_with_three_tasks():
         Task(id=214, description="Task 2", status="started"),
         Task(id=16, description="Task 3", status="finished")
     ]
-    return TaskQueue(tasks)
+    return AsyncTaskQueue(tasks)
 
 
-class TestTaskQueueInitialization:
-    """Тесты инициализации TaskQueue"""
+class TestAsyncTaskQueueInitialization:
+    """Тесты инициализации AsyncTaskQueue"""
     
     def test_init_empty_queue(self, empty_queue):
         """Тест создания пустой очереди"""
@@ -61,35 +61,37 @@ class TestTaskQueueInitialization:
     
     def test_init_with_tasks(self, sample_tasks):
         """Тест создания очереди со списком задач"""
-        queue = TaskQueue(sample_tasks)
+        queue = AsyncTaskQueue(sample_tasks)
         assert len(queue) == len(sample_tasks)
         assert not queue.is_empty()
     
     def test_init_with_invalid_tasks(self):
         """Тест создания очереди с некорректными элементами"""
         with pytest.raises(TaskQueueException, match="All elements must be Task objects"):
-            TaskQueue([1, 2, 3, "not task"])
+            AsyncTaskQueue([1, 2, 3, "not task"])
     
     def test_init_with_empty_list(self):
         """Тест создания очереди с пустым списком"""
-        queue = TaskQueue([])
+        queue = AsyncTaskQueue([])
         assert len(queue) == 0
         assert queue.is_empty()
 
 
-class TestTaskQueueAdd:
+class TestAsyncTaskQueueAdd:
     """Тесты добавления задач в очередь"""
-    
-    def test_add_single_task(self, empty_queue, sample_task):
+
+    @pytest.mark.asyncio
+    async def test_add_single_task(self, empty_queue, sample_task):
         """Тест добавления одной задачи"""
-        empty_queue.add(sample_task)
+        await empty_queue.put(sample_task)
         assert len(empty_queue) == 1
         assert sample_task in empty_queue
     
-    def test_add_multiple_tasks(self, empty_queue, sample_tasks):
+    @pytest.mark.asyncio
+    async def test_add_multiple_tasks(self, empty_queue, sample_tasks):
         """Тест добавления нескольких задач"""
         for task in sample_tasks:
-            empty_queue.add(task)
+            await empty_queue.put(task)
         assert len(empty_queue) == len(sample_tasks)
     
     def test_add_invalid_task(self, empty_queue):
@@ -98,7 +100,7 @@ class TestTaskQueueAdd:
             empty_queue.add("not a task")
 
 
-class TestTaskQueueIteration:
+class TestAsyncTaskQueueIteration:
     """Тесты итерации по очереди"""
     
     def test_forward_iteration(self, queue_with_tasks, sample_tasks):
@@ -115,11 +117,12 @@ class TestTaskQueueIteration:
         for i, task in enumerate(tasks):
             assert task.id == sample_tasks[-(i + 1)].id
     
-    def test_iteration_with_modification(self, queue_with_three_tasks):
+    @pytest.mark.asyncio
+    async def test_iteration_with_modification(self, queue_with_three_tasks):
         """Тест итерации при модификации очереди"""
         iterator = iter(queue_with_three_tasks)
         next(iterator)
-        queue_with_three_tasks.add(Task(id=4))
+        await queue_with_three_tasks.put(Task(id=4))
         try:
             while True:
                 next(iterator)
@@ -134,7 +137,7 @@ class TestTaskQueueIteration:
         assert len(tasks_rev) == 0
 
 
-class TestTaskQueueFilter:
+class TestAsyncTaskQueueFilter:
     """Тесты фильтрации очереди"""
     
     def test_filter_by_status(self, queue_with_tasks):
@@ -166,7 +169,7 @@ class TestTaskQueueFilter:
         assert hasattr(generator, '__next__')
 
 
-class TestTaskQueueGetItem:
+class TestAsyncTaskQueueGetItem:
     """Тесты доступа по индексу"""
     
     def test_get_item_by_index(self, queue_with_tasks, sample_tasks):
@@ -177,7 +180,7 @@ class TestTaskQueueGetItem:
     def test_get_item_slice(self, queue_with_tasks):
         """Тест получения среза"""
         sliced = queue_with_tasks[1:3]
-        assert isinstance(sliced, TaskQueue)
+        assert isinstance(sliced, AsyncTaskQueue)
         assert len(sliced) == 2
     
     def test_get_item_negative_index(self, queue_with_tasks, sample_tasks):
@@ -190,7 +193,7 @@ class TestTaskQueueGetItem:
             _ = queue_with_tasks[100]
 
 
-class TestTaskQueueSetItem:
+class TestAsyncTaskQueueSetItem:
     """Тесты изменения по индексу"""
     
     def test_set_item_valid(self, queue_with_tasks):
@@ -207,7 +210,7 @@ class TestTaskQueueSetItem:
             queue_with_tasks[0] = "not a task"
 
 
-class TestTaskQueueDelItem:
+class TestAsyncTaskQueueDelItem:
     """Тесты удаления по индексу"""
     
     def test_del_item(self, queue_with_tasks):
@@ -222,13 +225,14 @@ class TestTaskQueueDelItem:
             del queue_with_tasks[100]
 
 
-class TestTaskQueueContains:
+class TestAsyncTaskQueueContains:
     """Тесты проверки вхождения"""
 
-    def test_contains_correct(self, queue_with_three_tasks, sample_task):
+    @pytest.mark.asyncio
+    async def test_contains_correct(self, queue_with_three_tasks, sample_task):
         """Тест проверки вхождения в очередь"""
         q = queue_with_three_tasks
-        q.add(sample_task)
+        await q.put(sample_task)
         assert sample_task in q
 
     def test_contains_empty_queue(self, empty_queue, sample_task):
@@ -236,15 +240,15 @@ class TestTaskQueueContains:
         assert sample_task not in empty_queue
    
 
-class TestTaskQueueAddition:
+class TestAsyncTaskQueueAddition:
     """Тесты операции сложения"""
     
-    def test_add_taskqueue(self, queue_with_three_tasks):
+    def test_add_AsyncTaskQueue(self, queue_with_three_tasks):
         """Тест сложения двух очередей"""
-        other_queue = TaskQueue([Task(id=4), Task(id=5)])
+        other_queue = AsyncTaskQueue([Task(id=4), Task(id=5)])
         result = queue_with_three_tasks + other_queue
         assert len(result) == 5
-        assert isinstance(result, TaskQueue)
+        assert isinstance(result, AsyncTaskQueue)
     
     def test_add_single_task(self, queue_with_three_tasks):
         """Тест сложения очереди и задачи"""
@@ -260,12 +264,12 @@ class TestTaskQueueAddition:
     
     def test_add_invalid_type(self, queue_with_three_tasks):
         """Тест сложения с некорректным типом"""
-        with pytest.raises(TaskQueueException, match="Cannot add TaskQueue and"):
+        with pytest.raises(TaskQueueException, match="Cannot add AsyncTaskQueue and"):
             _ = queue_with_three_tasks + "invalid"
     
-    def test_iadd_taskqueue(self, queue_with_three_tasks):
+    def test_iadd_AsyncTaskQueue(self, queue_with_three_tasks):
         """Тест inplace сложения очередей"""
-        other_queue = TaskQueue([Task(id=4), Task(id=5)])
+        other_queue = AsyncTaskQueue([Task(id=4), Task(id=5)])
         original_id = id(queue_with_three_tasks)
         queue_with_three_tasks += other_queue
         assert len(queue_with_three_tasks) == 5
@@ -283,7 +287,7 @@ class TestTaskQueueAddition:
             queue_with_three_tasks += "invalid"
 
 
-class TestTaskQueueSubtraction:
+class TestAsyncTaskQueueSubtraction:
     """Тесты операции вычитания"""
     
     def test_subtract_task(self, queue_with_tasks, sample_tasks):
@@ -293,9 +297,9 @@ class TestTaskQueueSubtraction:
         assert task_to_remove not in result
         assert len(result) == len(queue_with_tasks) - 1
     
-    def test_subtract_taskqueue(self, queue_with_tasks):
+    def test_subtract_AsyncTaskQueue(self, queue_with_tasks):
         """Тест вычитания другой очереди"""
-        tasks_to_remove = TaskQueue([queue_with_tasks[0], queue_with_tasks[1]])
+        tasks_to_remove = AsyncTaskQueue([queue_with_tasks[0], queue_with_tasks[1]])
         result = queue_with_tasks - tasks_to_remove
         assert len(result) == len(queue_with_tasks) - 2
     
@@ -347,7 +351,7 @@ class TestTaskQueueSubtraction:
         assert len(result) == len(queue_with_tasks)
 
 
-class TestTaskQueueLen:
+class TestAsyncTaskQueueLen:
     """Тесты длины очереди"""
     
     def test_len_empty(self, empty_queue):
@@ -359,7 +363,7 @@ class TestTaskQueueLen:
         assert len(queue_with_tasks) == len(sample_tasks)
 
 
-class TestTaskQueueIsEmpty:
+class TestAsyncTaskQueueIsEmpty:
     """Тесты проверки пустоты"""
     
     def test_is_empty_true(self, empty_queue):
@@ -371,29 +375,29 @@ class TestTaskQueueIsEmpty:
         assert not queue_with_tasks.is_empty()
 
 
-class TestTaskQueueRepr:
+class TestAsyncTaskQueueRepr:
     """Тесты строкового представления"""
     
     def test_repr_empty(self, empty_queue):
         """Тест представления пустой очереди"""
-        assert repr(empty_queue) == "Task queue: []"
+        assert repr(empty_queue) == "AsyncTaskQueue: []"
     
     def test_repr_non_empty(self, queue_with_three_tasks):
         """Тест представления непустой очереди"""
         repr_str = repr(queue_with_three_tasks)
-        assert "Task queue:" in repr_str
+        assert "AsyncTaskQueue" in repr_str
         assert "Task '13'" in repr_str
         assert "Task '214'" in repr_str
         assert "Task '16'" in repr_str
 
 
-class TestTaskQueueRandomCases:
+class TestAsyncTaskQueueRandomCases:
     """Тесты случайных ситуаций"""
     
     def test_large_queue(self):
         """Тест с большой очередью"""
         tasks = [Task(id=i) for i in range(1000)]
-        queue = TaskQueue(tasks)
+        queue = AsyncTaskQueue(tasks)
         assert len(queue) == 1000
         assert queue[0].id == 0
         assert queue[999].id == 999
@@ -405,7 +409,7 @@ class TestTaskQueueRandomCases:
             Task(id=20, status="started"),
             Task(id=30, status="finished")
         ]
-        queue = TaskQueue(tasks)
+        queue = AsyncTaskQueue(tasks)
         assert len(list(queue.filter_by(status="created"))) == 1
         assert len(list(queue.filter_by(status="started"))) == 1
         assert len(list(queue.filter_by(status="finished"))) == 1

@@ -1,23 +1,38 @@
-from task_examples import TaskClass, TaskDataclass, TaskNamedTuple
-from task_source_examples import FileSource, BadFileSource, ApiSource, GeneratorSource
-from task_module import TaskModule
+import asyncio
+import logging
+from async_data.handlers.async_handler_protocol import AsyncHandler
+from async_data.handlers.async_handlers import PrintHandler, DatabaseHandler, HttpPostHandler
+from task_collections import AsyncTaskQueue
+from async_data.dispatcher import Dispatcher
+from async_data.worker import worker
+from src.task import Task
 
-if __name__ == '__main__':
-    task1 = TaskDataclass(id=1, payload={'data': 'test'})
-    task2 = TaskNamedTuple(id='2', payload=[1, 2, 3])
-    task3 = TaskClass(id=[3], payload='simple')
-    task4 = {'id': 1, 'payload': [42]}
+logging.basicConfig(
+            level=logging.INFO,
+            format='[%(asctime)s] %(levelname)s: %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            #filename='logger.log',
+            #filemode='a'
+        )
 
-    file_source = FileSource('tasks.json')
-    bad_file_source = BadFileSource('project_122.flp')
-    api_source = ApiSource('https://api.example.com/view/tasks')
-    generator_source = GeneratorSource(3)
+async def main() -> None:
+    queue = AsyncTaskQueue()
+    
+    handlers: list[AsyncHandler] = [
+        #PrintHandler(),
+        DatabaseHandler(),
+        HttpPostHandler(),
+    ]
+    dispatcher = Dispatcher(handlers)
 
-    tm = TaskModule()
-    for task in [task1, task2, task3, task4]:
-        tm.add_task(task)
-    print('-----------------------------------------')
-    for task_source in [file_source, bad_file_source, api_source, generator_source]:
-        tm.add_source(task_source)
-    print('-----------------------------------------')
-    tm.get_tasks_from_sources()
+    workers = [asyncio.create_task(worker(queue, dispatcher)) for _ in range(3)]
+    await queue.put(Task(id=11, payload="Simple string task"))
+    await queue.put(Task(id=2, payload={"type": "http_request", "url": "https://httpbin.org/post", "data": {"key": "value"}}))
+
+    await asyncio.sleep(2)
+    queue.close()
+    
+    await asyncio.gather(*workers, return_exceptions=True)
+
+if __name__ == "__main__":
+    asyncio.run(main())
